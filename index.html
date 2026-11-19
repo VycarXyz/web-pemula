@@ -7,7 +7,13 @@
     <title>Belajar Bikin Website</title>
     <script>
       document.documentElement.classList.add("video-page");
-      const savedTheme = () => document.documentElement.dataset.theme = localStorage.getItem("site-theme") || "slate";
+      const savedTheme = () => {
+        try {
+          document.documentElement.dataset.theme = localStorage.getItem("site-theme") || "slate";
+        } catch {
+          document.documentElement.dataset.theme = "slate";
+        }
+      };
       savedTheme();
       window.addEventListener("pageshow", savedTheme);
     </script>
@@ -19,7 +25,7 @@
   <img src="favicon.ico" alt="" aria-hidden="true" draggable="false">
 </button>
 <button id="profileLoginButton" class="profile-link profile-login" type="button" onclick="window.loginGoogle && window.loginGoogle()">Login</button>
-<div class="bg-rainbow" id="rainbowBG"></div>
+<div class="bg-rainbow" aria-hidden="true"></div>
 <div class="container">
         <h2 id="listweb"></h2>
 <h2 class="rainbow"> copyright: HoYoLAB and HoYoverse</h2>
@@ -71,11 +77,11 @@
 
 </div>
         
-<div class="bg-rainbow" id="rainbowBG"></div>
+<div class="bg-rainbow" aria-hidden="true"></div>
 <h1 class="rainbow">My Favorite Anime List</h1>
 <details>
     <summary class="mute"><a>👉"CLICK HERE"👈</a></summary>
-<h1 class="rainbow">no.1 <br>Alya</h1 class="animelist" ></a>
+<h1 class="rainbow">no.1 <br>Alya</h1>
 <video
 controls preload="none"
 loading="lazy"
@@ -84,7 +90,7 @@ poster="list waifu/alya list1.png">
 </video>
 <p>cr: 𝐑𝐲 𝐟𝐭 𝐀𝐋𝐅〆𝐘𝐋 𝐊𝐆𝐍</p>
 <br>
-<h1 class="rainbow">no.2 <br>Waguri</h1 class="animelist"></a>
+<h1 class="rainbow">no.2 <br>Waguri</h1>
 <video
 controls preload="none" 
 poster="list waifu/waguri list2.png" 
@@ -93,7 +99,7 @@ loading="lazy">
 </video>
 <p>cr: Yonaaa✰</p>
 <br>
-<h1 class="rainbow">no.3 <br>Kurumi</h1 class="animelist"></a>
+<h1 class="rainbow">no.3 <br>Kurumi</h1>
 <video
 controls 
 preload="none" 
@@ -103,7 +109,7 @@ loading="lazy">
 </video>
 <p>cr: FazzA6`</p>
 <br>
-<h1 class="rainbow">no.4 <br>Elaina</h1 class="animelist"></a>
+<h1 class="rainbow">no.4 <br>Elaina</h1>
 <video
 controls 
 preload="none" 
@@ -113,7 +119,7 @@ poster="list waifu/elaina list4.png">
 </video>
 <p>cr: — Kᴇʟᴠɪɴ 友</p>
 <br>
-<h1 class="rainbow">no.5 <br>Miwa</h1 class="animelist"></a>
+<h1 class="rainbow">no.5 <br>Miwa</h1>
 <video
 controls 
 preload="none" 
@@ -285,6 +291,14 @@ preload="none">
     <source src="anime random/anime random17.mp4">
 </video>
 <h2>cr: 𝙕𝙚𝙮𝙚𝙣𝙠</h2>
+<video 
+poster="anime random/anime random foto18.png"
+loading="lazy"
+controls
+preload="none">
+<source src="anime random/anime random18.mp4">
+</video>
+    <h2>cr: Nico</h2>
     <br>
     <a href="#listweb"><mark>Kembali Ke List</mark></a>
     </details>
@@ -808,207 +822,17 @@ controls preload="none">
 <a href="#listweb"><mark>Kembali Ke List</mark></a>
 </details>
 <br>
-<br></br>
+<br>
 
-
-
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #090b12;
-  color: #f4f5fb;
-}
-
-/* ================= LOADING ================= */
-#loading {
-  position: fixed;
-  inset: 0;
-  background: black;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-.loader-text {
-  font-size: 22px;
-  animation: pulse 1.5s infinite;
-}
-
-.bar {
-  width: 200px;
-  height: 4px;
-  background: #333;
-  margin-top: 15px;
-  overflow: hidden;
-  border-radius: 10px;
-}
-
-.bar span {
-  display: block;
-  height: 100%;
-  width: 0%;
-  background: white;
-  animation: load 2s ease forwards;
-}
-
-@keyframes load {
-  to { width: 100%; }
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-/* ================= GATE ================= */
-#gate {
-  position: fixed;
-  inset: 0;
-  display: none;
-  overflow: hidden;
-  z-index: 9999;
-}
-
-/* VIDEO BACKGROUND */
-#gate video {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  min-width: 100%;
-  min-height: 100%;
-  transform: translate(-50%, -50%);
-  object-fit: cover;
-  filter: brightness(0.4); /* biar tulisan keliatan */
-}
-
-/* OVERLAY CONTENT */
-.gate-content {
-  position: relative;
-  z-index: 2;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: white;
-}
-
-.gate-content h1 {
-  width: min(100% - 32px, 700px);
-  margin: 0 auto 20px;
-  text-align: center;
-  font-size: 30px;
-  animation: float 2s ease-in-out infinite;
-}
-
-.login-options {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.gate-content button {
-  padding: 12px 25px;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  cursor: pointer;
-  background: white;
-  color: black;
-  transition: 0.2s;
-  box-shadow: 0 0 20px rgba(255,255,255,0.3);
-}
-
-.gate-content button:hover {
-  transform: scale(1.1);
-}
-
-.profile-link {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 10001;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: min(260px, calc(100vw - 32px));
-  padding: 8px 14px 8px 8px;
-  border: 1px solid rgba(255,255,255,.35);
-  border-radius: 999px;
-  background: rgba(20,20,20,.9);
-  color: white;
-  font: 14px Arial, sans-serif;
-  text-decoration: none;
-  box-shadow: 0 4px 18px rgba(0,0,0,.35);
-  backdrop-filter: blur(8px);
-}
-.profile-link[hidden] { display: none; }
-.profile-login {
-  justify-content: center;
-  min-height: 50px;
-  padding: 8px 18px;
-  cursor: pointer;
-}
-.profile-login:hover { background: rgba(45,50,68,.96); }
-.mobile-nav-toggle {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 10001;
-  width: 46px;
-  height: 46px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.mobile-nav-toggle img {
-  display: block;
-  width: 46px;
-  height: 46px;
-  margin: 0;
-  object-fit: contain;
-  border-radius: 0;
-  pointer-events: none;
-  user-select: none;
-  box-shadow: none;
-}
-.mobile-nav-toggle:disabled { cursor: default; }
-/* ================= SITE ================= */
-#site {
-  display: none;
-  padding: 20px;
-  color: white;
-}
-
-/* FLOAT TEXT */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-15px); }
-  100% { transform: translateY(0px); }
-}
-</style>
-
-<!-- LOADING -->
-<div id="loading">
-  <div class="loader-text">Loading...</div>
-  <div class="bar"><span></span></div>
 </div>
+
 
 <!-- GATE WITH VIDEO -->
 <div id="gate">
 
   <!-- VIDEO BACKGROUND (loop) -->
-  <video autoplay playsinline loop muted>   
-    <source preload="auto" src="video loading1.mp4" type="video/mp4">
+  <video autoplay playsinline loop muted preload="auto">
+    <source src="video loading1.mp4" type="video/mp4">
   </video>
 
   <!-- CONTENT -->
@@ -1036,4 +860,4 @@ body {
     
     <script src="script.js"></script>
 </body>
-</head>
+</html>

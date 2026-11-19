@@ -31,6 +31,15 @@ Catatan ini merangkum arahan pengguna untuk perubahan feed video. Ikuti kebutuha
 - Path video, poster, musik, dan gambar di HTML relatif terhadap lokasi file halaman. Pertahankan nama/path aset kecuali memang memindahkan aset dan memperbarui semua referensinya.
 - Proyek ini memakai HTML, CSS, dan JavaScript biasa dengan aset lokal; tidak terlihat memakai framework atau proses build. Perubahan perilaku feed biasanya berada di `script.js`, sedangkan tampilan feed berada di aturan `.shorts-*`/`.video-page` dalam `style.css`.
 
+## Catatan serah terima: halaman YouTube Anime
+
+- Halaman anime berada di `youtube-anime/anime.html`; data thumbnail dan episode berada di `youtube-anime/anime.js`, sedangkan tampilannya di `youtube-anime/anime.css`.
+- Setiap objek di `animeVideos` mewakili satu thumbnail/judul anime. Daftar episode dipasang ke objek anime tersebut, lalu `renderEpisodes()` menampilkan episode dari anime yang sedang dipilih. Dengan begitu, episode dari satu thumbnail tidak tercampur dengan thumbnail lain.
+- Kanchigai no Atelier Meister sudah memiliki 12 URL episode. Objek Video 2 sampai Video 10 masih berupa slot: masing-masing memperoleh array episode sendiri melalui `emptyEpisodes()`, dengan URL `source` kosong.
+- Ganti judul `Video 2`–`Video 10` dan isi `poster` dengan path gambar thumbnail yang sesuai. Saat ini semua slot tersebut memakai `poster/mikadono.jpg`, jadi ganti masing-masing agar thumbnail tidak sama.
+- Isi URL pada `source` episode untuk setiap anime. Episode yang URL-nya masih kosong tidak ditampilkan di daftar “Video selanjutnya”.
+- Saat melanjutkan, cek halaman di browser: pastikan thumbnail menampilkan poster yang tepat dan daftar “Video selanjutnya” berubah sesuai anime yang dipilih. Perubahan terakhir belum diuji di browser.
+
 ### Alur data feed utama
 
 `index.html` (koleksi video sumber) → `script.js` (ekstrak koleksi dan membentuk feed) → `.shorts-feed` (ditata oleh `style.css`). URL sumber video dan poster perlu tetap tersedia di data elemen meski atribut pemuatan dilepas sementara, agar bisa dimuat ulang ketika diperlukan.
