@@ -276,8 +276,12 @@ allVideos.forEach(activeVideo => {
   let autoScrollEnabled = false;
   try { autoScrollEnabled = localStorage.getItem("site-auto-scroll") === "true"; } catch {}
   const collections = [...document.querySelectorAll("details")]
-    .map((details) => ({ details, videos: [...details.querySelectorAll("video")] }))
-    .filter((collection) => collection.videos.length);
+    .map((details) => ({
+      details,
+      videos: [...details.querySelectorAll("video")],
+      embeds: [...details.querySelectorAll("iframe")]
+    }))
+    .filter((collection) => collection.videos.length || collection.embeds.length);
   if (!collections.length) return;
 
   const feed = document.createElement("section");
@@ -308,6 +312,19 @@ allVideos.forEach(activeVideo => {
       </header>
       <p class="search-results-status" id="searchResultsStatus" role="status" aria-live="polite"></p>
       <div class="search-results-grid" id="searchResultsGrid"></div>
+    </section>
+    <section class="human-check-overlay" id="humanCheckOverlay" role="dialog" aria-modal="true" aria-labelledby="humanCheckTitle" hidden>
+      <form class="human-check-dialog" id="humanCheckForm">
+        <h2 id="humanCheckTitle">Verifikasi keamanan</h2>
+        <p>Jawab soal sederhana untuk melanjutkan pencarian.</p>
+        <label id="humanCheckQuestion" for="humanCheckAnswer"></label>
+        <input id="humanCheckAnswer" type="number" inputmode="numeric" autocomplete="off" required>
+        <p class="human-check-status" id="humanCheckStatus" role="status" aria-live="polite"></p>
+        <div class="human-check-actions">
+          <button type="button" id="humanCheckCancel">Batal</button>
+          <button type="submit">Verifikasi</button>
+        </div>
+      </form>
     </section>
     <nav class="video-sidebar" id="videoSidebar" aria-label="Navigasi video">
       <button class="video-side-link is-active" type="button" data-feed-home><span class="video-side-icon">⌂</span><span>For You</span></button>
@@ -364,12 +381,42 @@ allVideos.forEach(activeVideo => {
     <div class="shorts-list" id="shortsList" aria-label="Daftar video"></div>`;
 
   const clips = [];
-  collections.forEach(({ details, videos }) => {
+  const embeddedVideos = [];
+  const embeddedItems = [];
+  collections.forEach(({ details, videos, embeds }) => {
     const heading = details.previousElementSibling;
     const collectionName = heading && /^H[1-3]$/.test(heading.tagName)
       ? heading.textContent.replace(/\s+/g, " ").trim()
       : "Koleksi video";
     if (heading && /^H[1-3]$/.test(heading.tagName)) heading.hidden = true;
+
+    embeds.forEach((embed) => {
+      const src = embed.getAttribute("src");
+      if (!src) return;
+      const nextText = embed.nextElementSibling;
+      const credit = nextText && /^(P|H[1-6])$/.test(nextText.tagName)
+        ? nextText.textContent.replace(/\s+/g, " ").trim()
+        : "";
+      if (heading?.id !== "video hentai") {
+        const item = document.createElement("article");
+        item.className = "shorts-item shorts-embed-item";
+        item.setAttribute("aria-label", `Video ${collectionName}`);
+        item.innerHTML = `<div class="embed-frame"></div><div class="shorts-caption"><p class="shorts-collection"></p><p class="shorts-credit"></p></div>`;
+        const frame = document.createElement("iframe");
+        frame.src = src;
+        frame.title = `Video ${collectionName}`;
+        frame.loading = "lazy";
+        frame.referrerPolicy = "strict-origin-when-cross-origin";
+        frame.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        frame.allowFullscreen = true;
+        item.querySelector(".embed-frame").append(frame);
+        item.querySelector(".shorts-collection").textContent = collectionName;
+        item.querySelector(".shorts-credit").textContent = credit;
+        item.querySelector(".shorts-credit").hidden = !credit;
+        embeddedItems.push(item);
+      }
+      embeddedVideos.push({ collectionId: heading?.id || "", collectionName, credit, src });
+    });
 
     videos.forEach((video) => {
       const nextText = video.nextElementSibling;
@@ -537,6 +584,7 @@ allVideos.forEach(activeVideo => {
     window.history.replaceState(window.history.state, "", `${requestedUrl.pathname}${requestedUrl.search}${requestedUrl.hash}`);
   }
   clips.forEach(({ item }) => list.append(item));
+  embeddedItems.forEach((item) => list.append(item));
 
   const profileOverlay = document.getElementById("profileOverlay");
   const profileName = document.getElementById("profileName");
@@ -752,6 +800,45 @@ allVideos.forEach(activeVideo => {
   const searchResultsStatus = feed.querySelector("#searchResultsStatus");
   const searchResultsGrid = feed.querySelector("#searchResultsGrid");
   const searchResultsBack = feed.querySelector("#searchResultsBack");
+  const humanCheckOverlay = feed.querySelector("#humanCheckOverlay");
+  const humanCheckForm = feed.querySelector("#humanCheckForm");
+  const humanCheckQuestion = feed.querySelector("#humanCheckQuestion");
+  const humanCheckAnswer = feed.querySelector("#humanCheckAnswer");
+  const humanCheckStatus = feed.querySelector("#humanCheckStatus");
+  const humanCheckCancel = feed.querySelector("#humanCheckCancel");
+  let humanCheckExpectedAnswer = 0;
+  let humanCheckApproved = false;
+  const createHumanCheck = () => {
+    const firstNumber = Math.floor(Math.random() * 9) + 2;
+    const secondNumber = Math.floor(Math.random() * 9) + 2;
+    humanCheckExpectedAnswer = firstNumber + secondNumber;
+    humanCheckQuestion.textContent = `${firstNumber} + ${secondNumber} = ?`;
+    humanCheckAnswer.value = "";
+    humanCheckStatus.textContent = "";
+  };
+  const closeHumanCheck = () => {
+    humanCheckOverlay.hidden = true;
+    humanCheckForm.reset();
+    humanCheckStatus.textContent = "";
+    categorySearch.focus();
+  };
+  const openHumanCheck = () => {
+    createHumanCheck();
+    humanCheckOverlay.hidden = false;
+    humanCheckAnswer.focus();
+  };
+  humanCheckCancel.addEventListener("click", closeHumanCheck);
+  humanCheckForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (Number(humanCheckAnswer.value) !== humanCheckExpectedAnswer) {
+      createHumanCheck();
+      humanCheckStatus.textContent = "Jawaban belum benar. Coba soal baru.";
+      return;
+    }
+    humanCheckOverlay.hidden = true;
+    humanCheckApproved = true;
+    searchForm.requestSubmit();
+  });
   const searchSuggestions = feed.querySelector("#searchSuggestions");
   const normalizeSearchText = (text) => text.trim().toLocaleLowerCase().replace(/\s+/g, " ");
   const editDistance = (first, second) => {
@@ -790,7 +877,7 @@ allVideos.forEach(activeVideo => {
     );
   };
   const searchableCategories = [...new Map(
-    clips
+    [...clips, ...embeddedVideos]
       .filter(({ collectionId }) => collectionId)
       .map(({ collectionId, collectionName }) => [
         normalizeSearchText(collectionId),
@@ -888,6 +975,7 @@ allVideos.forEach(activeVideo => {
   const closeSearchResults = (resumeVideo) => {
     if (searchResultsPage.hidden) return;
     searchResultsPage.hidden = true;
+    searchResultsGrid.replaceChildren();
     const videoToResume = videoToResumeAfterSearch;
     videoToResumeAfterSearch = null;
     if (resumeVideo && videoToResume) {
@@ -900,14 +988,26 @@ allVideos.forEach(activeVideo => {
     if (!query) return;
     hideSearchSuggestions();
 
+    const matches = clips.filter(({ collectionId }) => collectionId && matchesCategoryId(collectionId, query));
+    const matchingEmbeds = embeddedVideos.filter(({ collectionId }) =>
+      collectionId && matchesCategoryId(collectionId, query)
+    );
+    const needsHumanCheck = [...matches, ...matchingEmbeds]
+      .some(({ collectionId }) => collectionId === "video hentai");
+    if (needsHumanCheck && !humanCheckApproved) {
+      openHumanCheck();
+      return;
+    }
+    humanCheckApproved = false;
+
     if (searchResultsPage.hidden) {
       videoToResumeAfterSearch = clips.find(({ video }) => !video.paused)?.video || null;
       clips.forEach(({ video }) => video.pause());
     }
-    const matches = clips.filter(({ collectionId }) => collectionId && matchesCategoryId(collectionId, query));
+    const resultCount = matches.length + matchingEmbeds.length;
     searchResultsTitle.textContent = `Hasil untuk "${categorySearch.value.trim()}"`;
-    searchResultsStatus.textContent = matches.length
-      ? `${matches.length} video ditemukan berdasarkan ID kategori.`
+    searchResultsStatus.textContent = resultCount
+      ? `${resultCount} video ditemukan berdasarkan ID kategori.`
       : `Tidak ada video untuk ID "${categorySearch.value.trim()}".`;
     searchResultsGrid.replaceChildren();
 
@@ -918,9 +1018,14 @@ allVideos.forEach(activeVideo => {
       const poster = clip.video.dataset.posterSrc;
       if (poster) {
         const image = document.createElement("img");
-        image.src = poster;
         image.alt = "";
         image.loading = "lazy";
+        image.addEventListener("load", () => {
+          if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+            image.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
+          }
+        }, { once: true });
+        image.src = poster;
         card.append(image);
       } else {
         const placeholder = document.createElement("span");
@@ -957,6 +1062,28 @@ allVideos.forEach(activeVideo => {
       searchResultsGrid.append(card);
     });
 
+    matchingEmbeds.forEach((embed) => {
+      const card = document.createElement("article");
+      card.className = "search-result-embed-card";
+      const frame = document.createElement("iframe");
+      frame.src = embed.src;
+      frame.title = `Video ${embed.collectionName}`;
+      frame.loading = "lazy";
+      frame.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+      frame.allowFullscreen = true;
+      card.append(frame);
+
+      const details = document.createElement("div");
+      details.className = "search-result-details";
+      const title = document.createElement("strong");
+      title.textContent = embed.collectionName;
+      const credit = document.createElement("span");
+      credit.textContent = embed.credit || "Video";
+      details.append(title, credit);
+      card.append(details);
+      searchResultsGrid.append(card);
+    });
+
     searchResultsPage.hidden = false;
   };
   searchForm.addEventListener("submit", showSearchResults);
@@ -965,7 +1092,9 @@ allVideos.forEach(activeVideo => {
     categorySearch.focus();
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeSearchResults(true);
+    if (event.key !== "Escape") return;
+    if (!humanCheckOverlay.hidden) closeHumanCheck();
+    else closeSearchResults(true);
   });
   sidebar.querySelector("[data-feed-home]").addEventListener("click", (event) => {
     categorySearch.value = "";
