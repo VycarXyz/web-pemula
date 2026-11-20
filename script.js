@@ -41,7 +41,7 @@
 
         let laguSekarang = 0;
 
-        // Memilih dan mengganti lagu
+        // Tugas: Memilih dan mengganti lagu
         function pilihLagu(index, putar = true) {
             laguSekarang =
                 (index + daftarLagu.length) % daftarLagu.length;
@@ -64,7 +64,7 @@
             }
         }
 
-        // Play dan Pause
+        // Tugas: Play dan pause musik
         window.toggleMusic = function toggleMusic() {
             if (bgm.paused) {
                 bgm.play()
@@ -80,64 +80,59 @@
             }
         }
 
-        // Lagu berikutnya
+        // Tugas: Lagu berikutnya
         window.laguBerikutnya = function laguBerikutnya() {
             pilihLagu(laguSekarang + 1);
         }
 
-        // Lagu sebelumnya
+        // Tugas: Lagu sebelumnya
         window.laguSebelumnya = function laguSebelumnya() {
             pilihLagu(laguSekarang - 1);
         }
 
-        // Volume 0 sampai 100%
+        // Tugas: Mengatur volume dari 0 sampai 100%
         window.setVolume = function setVolume(value) {
             bgm.volume = Number(value) / 100;
         }
 
-        // Otomatis lanjut ketika lagu selesai
+        // Tugas: Otomatis lanjut ketika lagu selesai
         bgm.addEventListener("ended", laguBerikutnya);
 
-        // Pengaturan awal
+        // Tugas: Pengaturan volume dan lagu awal
         setVolume(document.getElementById("volumeMusik").value);
         pilihLagu(0, false);
         const statusMusik = document.getElementById("statusMusik");
 
-// Mengubah tulisan status
+// Tugas: Mengubah tulisan status
 function ubahStatus(pesan) {
     statusMusik.textContent = pesan;
 }
 
-// Audio mulai dimuat
+// Tugas: Menangani status pemuatan dan pemutaran audio
 bgm.addEventListener("loadstart", function () {
     ubahStatus("⏳ Memuat audio...");
 });
 
-// Audio siap diputar
 bgm.addEventListener("canplay", function () {
     if (bgm.paused) {
         ubahStatus("✓ Audio siap diputar");
     }
 });
 
-// Musik sedang diputar
 bgm.addEventListener("playing", function () {
     ubahStatus("♫ Musik sedang diputar");
 });
 
-// Musik dijeda
 bgm.addEventListener("pause", function () {
     if (!bgm.ended && !bgm.error) {
         ubahStatus("Ⅱ Musik dijeda");
     }
 });
 
-// Audio sedang buffering
 bgm.addEventListener("waiting", function () {
     ubahStatus("⏳ Buffering audio...");
 });
 
-// Audio gagal dimuat
 bgm.addEventListener("error", function () {
     ubahStatus("✕ Audio gagal dimuat!");
 });
@@ -145,19 +140,19 @@ bgm.addEventListener("error", function () {
 }
 
 
-;
+// ==========================================
+// ANALYTICS SHIM
+// ==========================================
 {
-
   window.si = window.si || function () {
     (window.si.q = window.si.q || []).push(arguments);
   };
-
 }
 
-
-;
+// ==========================================
+// AUDIO SINEMATIK: Sinkron Volume dan Mute
+// ==========================================
 {
-
 const feedVideos = [...document.querySelectorAll("video")]
     .filter(video => !video.closest("#gate"));
 const videoAudioStorageKey = "site-video-audio";
@@ -198,20 +193,19 @@ feedVideos.forEach(video => {
     video.muted = sharedVideoMuted;
     video.addEventListener("volumechange", () => syncVideoSettings(video));
 });
-
 }
 
-
-;
+// ==========================================
+// LOADING GATE: Buka Situs dan Putar Awal
+// ==========================================
 {
-
 const gate = document.getElementById("gate");
 const site = document.getElementById("site");
-const teks = document.getElementById("teks");
+const loadingMessage = document.getElementById("teks");
 window.userSignedIn = false;
 
 
-/* LOADING */
+// Tugas: Cek persetujuan autoplay saat halaman dimuat
 const audioAutoplayKey = "site-audio-autoplay-approved";
 window.siteIsOpen = false;
 document.addEventListener("DOMContentLoaded", () => {
@@ -231,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-/* ENTER */
+// Tugas: Membuka situs setelah interaksi pengguna
 window.openSite = function openSite(userInitiated = false) {
   if (!gate || !site) return;
   if (userInitiated) {
@@ -239,7 +233,7 @@ window.openSite = function openSite(userInitiated = false) {
   }
   if (window.siteIsOpen) return;
   window.siteIsOpen = true;
-  if (teks) teks.textContent = "Welcome to My Website";
+  if (loadingMessage) loadingMessage.textContent = "Welcome to My Website";
   gate.style.opacity = "0";
   gate.style.transition = "2s ease";
   window.playInitialVideo?.();
@@ -249,13 +243,12 @@ window.openSite = function openSite(userInitiated = false) {
     site.style.display = "block";
   }, 900);
 }
-
 }
 
-
-;
+// ==========================================
+// PEMUTARAN EKSKLUSIF: Satu Video Aktif
+// ==========================================
 {
-
 const allVideos = document.querySelectorAll("video");
 
 allVideos.forEach(activeVideo => {
@@ -265,14 +258,14 @@ allVideos.forEach(activeVideo => {
         });
     });
 });
-
 }
 
-
-;
+// ==========================================
+// SHORTS FEED: Inisialisasi Fitur Utama
+// ==========================================
 {
-
 (() => {
+  // Tugas: Siapkan koleksi video dan struktur feed
   let autoScrollEnabled = false;
   try { autoScrollEnabled = localStorage.getItem("site-auto-scroll") === "true"; } catch {}
   const collections = [...document.querySelectorAll("details")]
@@ -284,6 +277,7 @@ allVideos.forEach(activeVideo => {
     .filter((collection) => collection.videos.length || collection.embeds.length);
   if (!collections.length) return;
 
+  // Tugas: Buat markup kontrol, navigasi, dan pencarian
   const feed = document.createElement("section");
   feed.className = "shorts-feed";
   feed.id = "video-feed";
@@ -380,6 +374,7 @@ allVideos.forEach(activeVideo => {
     </section>
     <div class="shorts-list" id="shortsList" aria-label="Daftar video"></div>`;
 
+  // Tugas: Konversi elemen HTML menjadi data klip
   const clips = [];
   const embeddedVideos = [];
   const embeddedItems = [];
@@ -531,6 +526,7 @@ allVideos.forEach(activeVideo => {
     details.remove();
   });
 
+  // Tugas: Simpan katalog dan acak urutan video
   const videoCatalog = Object.fromEntries(clips.map(({ item, video, collectionName, key }) => [key, {
     src: video.dataset.videoSrc || video.querySelector("source")?.dataset.src || "",
     poster: video.dataset.posterSrc || "",
@@ -586,6 +582,9 @@ allVideos.forEach(activeVideo => {
   clips.forEach(({ item }) => list.append(item));
   embeddedItems.forEach((item) => list.append(item));
 
+  // ==========================================
+  // PROFIL PENGGUNA
+  // ==========================================
   const profileOverlay = document.getElementById("profileOverlay");
   const profileName = document.getElementById("profileName");
   const profileAvatar = document.getElementById("profileAvatar");
@@ -681,6 +680,7 @@ allVideos.forEach(activeVideo => {
 
   if (requestedClipIndex >= 0) list.scrollTop = requestedClipIndex * list.clientHeight;
 
+  // Tugas: Kelola penyimpanan lokal untuk suka dan simpan
   const readClipSet = (storageKey) => {
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -755,6 +755,9 @@ allVideos.forEach(activeVideo => {
   });
   updateVideoActions();
 
+  // ==========================================
+  // SIDEBAR DAN NAVIGASI MOBILE
+  // ==========================================
   const sidebar = feed.querySelector(".video-sidebar");
   const sidebarLinks = [...sidebar.querySelectorAll(".video-side-link")];
   const mobileNavToggle = document.getElementById("mobileNavToggle");
@@ -793,6 +796,10 @@ allVideos.forEach(activeVideo => {
     homeLink.querySelector(".video-side-icon").textContent = enabled ? "←" : "⌂";
     homeLink.lastElementChild.textContent = enabled ? "Kembali ke halaman utama" : "For You";
   };
+
+  // ==========================================
+  // VERIFIKASI KEAMANAN
+  // ==========================================
   const searchForm = feed.querySelector("#videoSearchForm");
   const categorySearch = feed.querySelector("#videoCategorySearch");
   const searchResultsPage = feed.querySelector("#searchResultsPage");
@@ -839,6 +846,10 @@ allVideos.forEach(activeVideo => {
     humanCheckApproved = true;
     searchForm.requestSubmit();
   });
+
+  // ==========================================
+  // PENCARIAN DAN HASIL VIDEO
+  // ==========================================
   const searchSuggestions = feed.querySelector("#searchSuggestions");
   const normalizeSearchText = (text) => text.trim().toLocaleLowerCase().replace(/\s+/g, " ");
   const editDistance = (first, second) => {
@@ -1107,6 +1118,10 @@ allVideos.forEach(activeVideo => {
     updateClipPreloadWindow(activeClipIndex);
     list.scrollTo({ top: 0, behavior: "smooth" });
   });
+
+  // ==========================================
+  // PEMUATAN MEDIA CERDAS
+  // ==========================================
   let preloadTimer = null;
   const attachClipMedia = (clip, preloadMode = "auto") => {
     const { video, sources = [] } = clip;
@@ -1182,6 +1197,7 @@ allVideos.forEach(activeVideo => {
   }, { root: list, threshold: [.2, .7] });
   clips.forEach(({ item }) => observer.observe(item));
 
+  // Tugas: Bersihkan struktur details asli setelah data dipindahkan
   document.querySelectorAll("details").forEach((details) => {
     const summary = details.querySelector(":scope > summary");
     if (summary) summary.remove();
