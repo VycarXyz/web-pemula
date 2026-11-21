@@ -23,20 +23,31 @@ FRONTEND_ORIGINS=http://localhost:5501,http://127.0.0.1:5501
 
 Jika Supabase hanya menampilkan key lama, gunakan `service_role` sebagai `SUPABASE_SECRET_KEY`. Jangan menaruh key ini di file frontend, jangan kirim lewat chat, dan jangan commit `.env`.
 
-## 3. Jalankan backend
+## 3. Jalankan backend lokal
 
-Dari terminal di root proyek:
+Dari terminal di root proyek, jalankan:
 
 ```powershell
-cd backend
-npm install
-npm start
+npm --prefix backend start
 ```
 
-Backend berjalan di `http://localhost:3001`. Cek `http://localhost:3001/health`; status `ok` berarti backend dapat mengakses tabel Supabase.
+Backend lokal berjalan di `http://localhost:3001`. Cek `http://localhost:3001/health`; status `ok` berarti backend dapat mengakses tabel Supabase. Biarkan proses backend berjalan saat mencoba website lokal.
 
-## 4. Jalankan website
+## 4. Deploy ke Cloudflare Pages
 
-`frontend/api-config.js` sudah diarahkan ke `http://localhost:3001`. Buka `index.html` melalui Live Server di port `5501`, login dengan Firebase, lalu tekan **Suka**. Data dapat dilihat di **Supabase > Table Editor > video_likes**.
+Pages Functions di folder `functions/` menyediakan endpoint produksi `/api/liked-videos` dan `/health`. Fungsi memverifikasi Firebase ID token lalu memakai secret Supabase dari environment Cloudflare. Supabase Third-Party Auth tidak diperlukan.
 
-Untuk hosting, deploy folder `backend/` ke server Node.js, atur variabel `.env` di penyedia hosting, ubah `FRONTEND_ORIGINS` ke origin website, dan ubah URL di `frontend/api-config.js` ke URL backend HTTPS.
+1. Hubungkan repository melalui **Workers & Pages > Create application > Pages > Connect to Git**. Pages Functions tidak didukung melalui Direct Upload.
+2. Gunakan root repository sebagai project root, preset **None**, build command kosong, dan build output directory `.`. `index.html` serta folder `functions/` berada di root.
+3. Di pengaturan Pages **Settings > Variables and Secrets**, isi untuk Production (dan Preview jika diperlukan):
+   - `SUPABASE_URL`
+   - `FIREBASE_PROJECT_ID` dengan nilai `myweb-id`
+   - `SUPABASE_SECRET_KEY` sebagai **Secret**
+4. Deploy ulang. `frontend/api-config.js` otomatis memakai origin Pages di production, sehingga request menuju Function pada domain yang sama.
+5. Cek `https://DOMAIN-PAGES-MU/health` dan pastikan hasilnya `{"status":"ok"}`. Setelah itu login dan coba tombol **Suka**.
+
+Secret key tidak boleh dimasukkan ke `frontend/`, tidak boleh di-commit, dan tidak perlu mengatur CORS untuk request same-origin dari Pages.
+
+## 5. Jalankan website lokal
+
+Jalankan `npm --prefix backend start`, lalu buka `index.html` melalui Live Server di port `5501`. Data dapat dilihat di **Supabase > Table Editor > video_likes**.
