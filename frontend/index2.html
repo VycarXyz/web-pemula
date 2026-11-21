@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profil</title>
   <script>document.documentElement.dataset.theme = "slate";</script>
+  <script src="api-config.js"></script>
+  <script src="liked-videos-api.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -56,9 +58,11 @@
     .liked-videos h2 { margin: 0 0 16px; font-size: 20px; color: var(--profile-text); }
     .liked-videos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
     .liked-video-card { min-width: 0; padding: 12px; border: 1px solid var(--profile-line); border-radius: 16px; background: rgba(0,0,0,.12); }
-    .liked-video-frame { display: grid; width: 100%; max-height: 420px; aspect-ratio: 9 / 16; overflow: hidden; place-items: center; border-radius: 11px; background: #050609; }
+    .liked-video-frame { position: relative; display: grid; width: 100%; max-height: 420px; aspect-ratio: 9 / 16; overflow: hidden; place-items: center; border-radius: 11px; background: #050609; }
     .liked-poster-link { display: grid; width: 100%; height: 100%; place-items: center; background: #050609; }
     .liked-poster-link img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .liked-video-remove { position: absolute; z-index: 1; top: 8px; right: 8px; display: grid; width: 34px; height: 34px; padding: 0; place-items: center; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; background: rgba(0,0,0,.75); color: #fff; font-size: 23px; line-height: 1; }
+    .liked-video-remove:hover { background: #c62828; }
     .liked-poster-missing { padding: 24px; color: var(--profile-muted); font-size: 13px; text-align: center; }
     .liked-video-title { margin: 10px 2px 2px; color: var(--profile-text); font-size: 14px; font-weight: 700; }
     .liked-video-credit { margin: 0 2px; color: var(--profile-muted); font-size: 12px; overflow-wrap: anywhere; }
@@ -121,75 +125,96 @@
     const likedVideosCount = document.getElementById("likedVideosCount");
     const likedVideosEmpty = document.getElementById("likedVideosEmpty");
 
-    function readStoredArray(key) {
-      try {
-        const value = JSON.parse(localStorage.getItem(key) || "[]");
-        return Array.isArray(value) ? value : [];
-      } catch {
-        return [];
-      }
+    function resolveFrontendAsset(path) {
+      const relativePath = path.startsWith("frontend/") ? path.slice("frontend/".length) : path;
+      return new URL(relativePath, new URL("./", window.location.href)).href;
     }
 
-    function readVideoCatalog() {
-      try {
-        const value = JSON.parse(localStorage.getItem("site-video-catalog") || "{}");
-        return value && typeof value === "object" ? value : {};
-      } catch {
-        return {};
-      }
-    }
-
-    function renderLikedVideos() {
-      const likedKeys = readStoredArray("site-liked-videos");
-      const catalog = readVideoCatalog();
+    async function renderLikedVideos(user) {
       likedVideosGrid.replaceChildren();
-      likedVideosCount.textContent = `(${likedKeys.length})`;
-      likedVideosEmpty.hidden = likedKeys.length > 0;
+      likedVideosEmpty.hidden = false;
+      likedVideosEmpty.textContent = "Memuat video yang disukai...";
+      try {
+        const likedVideos = await window.likedVideosApi.list(user);
+        likedVideosCount.textContent = `(${likedVideos.length})`;
+        likedVideosEmpty.hidden = likedVideos.length > 0;
+        likedVideosEmpty.textContent = "Belum ada video yang disukai.";
 
-      likedKeys.forEach((key) => {
-        const record = catalog[key] || {};
-        const sourcePath = record.src || key;
-        const card = document.createElement("article");
-        card.className = "liked-video-card";
-        const frame = document.createElement("div");
-        frame.className = "liked-video-frame";
-        const link = document.createElement("a");
-        link.className = "liked-poster-link";
-        const destination = new URL("index.html", window.location.href);
-        destination.searchParams.set("video", sourcePath);
-        link.href = destination.href;
-        link.setAttribute("aria-label", `Putar ${record.collectionName || "video yang disukai"}`);
-        if (record.poster) {
-          const poster = document.createElement("img");
-          poster.src = record.poster;
-          poster.alt = record.collectionName ? `Poster ${record.collectionName}` : "Poster video yang disukai";
-          poster.loading = "lazy";
-          poster.addEventListener("load", () => {
-            frame.style.aspectRatio = `${poster.naturalWidth} / ${poster.naturalHeight}`;
-          }, { once: true });
-          link.append(poster);
-        } else {
-          const placeholder = document.createElement("span");
-          placeholder.className = "liked-poster-missing";
-          placeholder.textContent = "Poster tidak tersedia - Buka video";
-          link.append(placeholder);
-        }
-        frame.append(link);
-        const title = document.createElement("p");
-        title.className = "liked-video-title";
-        title.textContent = record.collectionName || "Video yang disukai";
-        const credit = document.createElement("p");
-        credit.className = "liked-video-credit";
-        credit.textContent = record.credit || "";
-        credit.hidden = !record.credit;
-        card.append(frame, title, credit);
-        likedVideosGrid.append(card);
-      });
+        likedVideos.forEach((record) => {
+          const card = document.createElement("article");
+          card.className = "liked-video-card";
+          const frame = document.createElement("div");
+          frame.className = "liked-video-frame";
+          const link = document.createElement("a");
+          link.className = "liked-poster-link";
+          const destination = new URL("../index.html", window.location.href);
+          destination.searchParams.set("video", record.video_key);
+          link.href = destination.href;
+          link.setAttribute("aria-label", `Putar ${record.collection_name || "video yang disukai"}`);
+          if (record.poster_src) {
+            const poster = document.createElement("img");
+            poster.src = resolveFrontendAsset(record.poster_src);
+            poster.alt = record.collection_name ? `Poster ${record.collection_name}` : "Poster video yang disukai";
+            poster.loading = "lazy";
+            poster.addEventListener("load", () => {
+              frame.style.aspectRatio = `${poster.naturalWidth} / ${poster.naturalHeight}`;
+            }, { once: true });
+            link.append(poster);
+          } else {
+            const placeholder = document.createElement("span");
+            placeholder.className = "liked-poster-missing";
+            placeholder.textContent = "Poster tidak tersedia - Buka video";
+            link.append(placeholder);
+          }
+          const removeButton = document.createElement("button");
+          removeButton.className = "liked-video-remove";
+          removeButton.type = "button";
+          removeButton.textContent = "×";
+          removeButton.setAttribute("aria-label", `Hapus ${record.collection_name || "video"} dari daftar suka`);
+          removeButton.title = "Hapus dari video yang disukai";
+          removeButton.addEventListener("click", async () => {
+            removeButton.disabled = true;
+            status.textContent = "Menghapus video dari daftar suka...";
+            try {
+              await window.likedVideosApi.remove(record.video_key, user);
+              card.remove();
+              const remaining = likedVideosGrid.querySelectorAll(".liked-video-card").length;
+              likedVideosCount.textContent = `(${remaining})`;
+              if (remaining === 0) {
+                likedVideosEmpty.hidden = false;
+                likedVideosEmpty.textContent = "Belum ada video yang disukai.";
+              }
+              status.textContent = "";
+            } catch (error) {
+              console.error("Gagal menghapus video yang disukai:", error);
+              status.textContent = error instanceof Error ? error.message : "Video gagal dihapus dari daftar suka.";
+              removeButton.disabled = false;
+            }
+          });
+          frame.append(link, removeButton);
+          const title = document.createElement("p");
+          title.className = "liked-video-title";
+          title.textContent = record.collection_name || "Video yang disukai";
+          const credit = document.createElement("p");
+          credit.className = "liked-video-credit";
+          credit.textContent = record.credit || "";
+          credit.hidden = !record.credit;
+          card.append(frame, title, credit);
+          likedVideosGrid.append(card);
+        });
+      } catch (error) {
+        console.error("Gagal memuat video yang disukai dari Supabase:", error);
+        likedVideosCount.textContent = "(0)";
+        likedVideosEmpty.hidden = false;
+        likedVideosEmpty.textContent = "Gagal memuat video yang disukai. Periksa konfigurasi Supabase.";
+        status.textContent = error instanceof Error ? error.message : "Daftar video yang disukai tidak dapat dimuat.";
+      }
     }
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
+      window.siteCurrentUser = user || null;
       if (!user) {
-        window.location.replace("index.html");
+        window.location.replace("../index.html");
         return;
       }
       nameElement.textContent = user.displayName || "Pengunjung";
@@ -200,7 +225,7 @@
         avatarFallback.hidden = true;
       }
       logoutButton.hidden = false;
-      renderLikedVideos();
+      await renderLikedVideos(user);
     });
 
     logoutButton.addEventListener("click", async () => {
@@ -208,7 +233,7 @@
       status.textContent = "Sedang keluar...";
       try {
         await signOut(auth);
-        window.location.replace("index.html");
+        window.location.replace("../index.html");
       } catch (error) {
         console.error("Logout gagal:", error);
         status.textContent = "Logout gagal. Coba lagi.";
@@ -216,7 +241,7 @@
       }
     });
   </script>
-  <a class="back-link" id="backToHome" href="index.html">&larr; Kembali</a>
+  <a class="back-link" id="backToHome" href="../index.html">&larr; Kembali</a>
   <script>
     document.getElementById("backToHome").addEventListener("click", (event) => {
       const previousPage = new URL(document.referrer || "", window.location.href);

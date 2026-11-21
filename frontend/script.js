@@ -10,32 +10,32 @@
         const daftarLagu = [
             {
                 judul: "Lullaby of the New Moon",
-                file: "backsound for web.mp3"
+                file: "frontend/backsound for web.mp3"
             },
             {
                 judul: "Wind Bless on you",
-                file: "backsound web via genshin.mp3"
+                file: "frontend/backsound web via genshin.mp3"
             },
             {
                 judul: "Get Out Here",
-                file: "backsound get out here.mpeg"
+                file: "frontend/backsound get out here.mpeg"
             },
             {
                 judul: "Halvorsen Sunrise",
-                file: "Halvorsen_Sunrise.mpeg"
+                file: "frontend/Halvorsen_Sunrise.mpeg"
 
             },
             {
                 judul: "In Your Head",
-                file: "InYourHead.mp3"
+                file: "frontend/InYourHead.mp3"
             },
             {
                 judul: "giants",
-                file: "giants.mpeg"
+                file: "frontend/giants.mpeg"
             },
             {
                 judul: "Love For You",
-                file: "love for you.mp3"
+                file: "frontend/love for you.mp3"
             },
         ];
 
@@ -330,7 +330,7 @@ allVideos.forEach(activeVideo => {
       <div class="video-side-link video-side-link-static"><span class="video-side-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H9l-5 4V4Z"/><path d="M8 10h8M8 13h5"/></svg></span><span>Activity</span></div>
       <div class="video-side-link video-side-link-static"><span class="video-side-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg></span><span>Upload</span></div>
       <button class="video-side-link" type="button" data-profile-open><span id="videoSidebarAvatar" class="video-side-icon video-side-profile" aria-hidden="true"><img alt=""></span><span>Profile</span></button>
-      <a class="video-side-link" href="index3.html"><span class="video-side-icon">⌕</span><span>Saran & Sosmed</span></a>
+      <a class="video-side-link" href="frontend/index3.html"><span class="video-side-icon">⌕</span><span>Saran & Sosmed</span></a>
       <div class="video-side-link video-side-link-static"><span class="video-side-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span>More</span></div>
     </nav>
     <nav class="video-actions" aria-label="Aksi video">
@@ -347,6 +347,7 @@ allVideos.forEach(activeVideo => {
         <span>Simpan</span>
       </button>
     </nav>
+    <p class="video-action-status" id="videoActionStatus" role="status" aria-live="polite"></p>
     <div class="shorts-menu-wrap">
       <button class="shorts-menu-trigger" id="shortsMenuTrigger" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="shortsMenu">⋮</button>
       <div class="shorts-menu" id="shortsMenu" hidden>
@@ -593,7 +594,7 @@ allVideos.forEach(activeVideo => {
   const profileLikedCount = document.getElementById("profileLikedCount");
   const profileLikedEmpty = document.getElementById("profileLikedEmpty");
   const profileStatus = document.getElementById("profileStatus");
-  const renderProfile = () => {
+  const renderProfile = async () => {
     const user = window.siteCurrentUser;
     profileName.textContent = user?.displayName || "Pengunjung";
     if (user?.photoURL) {
@@ -605,35 +606,82 @@ allVideos.forEach(activeVideo => {
       profileAvatar.hidden = true;
       profileAvatarFallback.hidden = false;
     }
-    const likedStorageKey = userClipStorageKey("site-liked-videos");
-    const likedKeys = likedStorageKey ? readClipSet(likedStorageKey) : [];
-    let catalog = {};
-    try { catalog = JSON.parse(localStorage.getItem("site-video-catalog") || "{}"); } catch {}
     profileLikedGrid.replaceChildren();
-    profileLikedCount.textContent = `(${likedKeys.length})`;
-    profileLikedEmpty.hidden = likedKeys.length > 0;
-    likedKeys.forEach((key) => {
-      const record = catalog[key] || {};
-      const clip = clips.find((candidate) => candidate.key === key);
-      const card = document.createElement("button");
-      card.className = "profile-liked-card";
-      card.type = "button";
-      card.setAttribute("aria-label", `Putar ${record.collectionName || "video yang disukai"}`);
-      const poster = document.createElement("img");
-      poster.src = record.poster || "";
-      poster.alt = "";
-      poster.loading = "lazy";
-      const title = document.createElement("span");
-      title.textContent = record.collectionName || "Video yang disukai";
-      card.append(poster, title);
-      card.addEventListener("click", () => {
-        if (!clip) return;
-        profileResumeVideo = null;
-        profileOverlay.hidden = true;
-        list.scrollTo({ top: clip.item.offsetTop, behavior: "smooth" });
+    profileLikedCount.textContent = "(0)";
+    profileLikedEmpty.hidden = false;
+    if (!user) {
+      profileLikedEmpty.textContent = "Login untuk melihat video yang disukai.";
+      return;
+    }
+
+    profileLikedEmpty.textContent = "Memuat video yang disukai...";
+    try {
+      const likedVideos = await window.likedVideosApi.list(user);
+      if (window.siteCurrentUser?.uid !== user.uid) return;
+      profileLikedCount.textContent = `(${likedVideos.length})`;
+      profileLikedEmpty.hidden = likedVideos.length > 0;
+      profileLikedEmpty.textContent = "Belum ada video yang disukai.";
+      profileStatus.textContent = "";
+      likedVideos.forEach((record) => {
+        const clip = clips.find((candidate) => candidate.key === record.video_key);
+        const card = document.createElement("article");
+        card.className = "profile-liked-card";
+        const playButton = document.createElement("button");
+        playButton.className = "profile-liked-play";
+        playButton.type = "button";
+        playButton.setAttribute("aria-label", `Putar ${record.collection_name || "video yang disukai"}`);
+        const poster = document.createElement("img");
+        poster.src = record.poster_src || "";
+        poster.alt = "";
+        poster.loading = "lazy";
+        const title = document.createElement("span");
+        title.textContent = record.collection_name || "Video yang disukai";
+        playButton.append(poster, title);
+        playButton.addEventListener("click", () => {
+          if (!clip) {
+            profileStatus.textContent = "Video ini tidak tersedia di halaman saat ini.";
+            return;
+          }
+          profileResumeVideo = null;
+          profileOverlay.hidden = true;
+          list.scrollTo({ top: clip.item.offsetTop, behavior: "smooth" });
+        });
+        const removeButton = document.createElement("button");
+        removeButton.className = "profile-liked-remove";
+        removeButton.type = "button";
+        removeButton.textContent = "×";
+        removeButton.setAttribute("aria-label", `Hapus ${record.collection_name || "video"} dari daftar suka`);
+        removeButton.title = "Hapus dari video yang disukai";
+        removeButton.addEventListener("click", async () => {
+          removeButton.disabled = true;
+          profileStatus.textContent = "Menghapus video dari daftar suka...";
+          try {
+            await window.likedVideosApi.remove(record.video_key, user);
+            card.remove();
+            likedClipKeys = likedClipKeys.filter((key) => key !== record.video_key);
+            profileLikedCount.textContent = `(${profileLikedGrid.children.length})`;
+            updateVideoActions();
+            if (profileLikedGrid.children.length === 0) {
+              profileLikedEmpty.hidden = false;
+              profileLikedEmpty.textContent = "Belum ada video yang disukai.";
+            }
+            profileStatus.textContent = "";
+          } catch (error) {
+            console.error("Gagal menghapus video yang disukai:", error);
+            profileStatus.textContent = error instanceof Error ? error.message : "Video gagal dihapus dari daftar suka.";
+            removeButton.disabled = false;
+          }
+        });
+        card.append(playButton, removeButton);
+        profileLikedGrid.append(card);
       });
-      profileLikedGrid.append(card);
-    });
+    } catch (error) {
+      console.error("Gagal memuat video yang disukai dari Supabase:", error);
+      if (window.siteCurrentUser?.uid !== user.uid) return;
+      profileLikedEmpty.hidden = false;
+      profileLikedEmpty.textContent = "Gagal memuat video yang disukai.";
+      profileStatus.textContent = error instanceof Error ? error.message : "Periksa konfigurasi dan koneksi Supabase.";
+    }
   };
   let profileResumeVideo = null;
   const openProfile = () => {
@@ -695,9 +743,11 @@ allVideos.forEach(activeVideo => {
   };
   let likedClipKeys = [];
   let isSignedIn = false;
+  let likeLoadVersion = 0;
   let savedClipKeys = readClipSet("site-saved-videos");
   const likeButton = document.getElementById("videoLikeButton");
   const saveButton = document.getElementById("videoSaveButton");
+  const videoActionStatus = document.getElementById("videoActionStatus");
   let activeClipIndex = requestedClipIndex >= 0 ? requestedClipIndex : 0;
   let activeClipScope = clips;
   window.playInitialVideo = () => {
@@ -717,13 +767,70 @@ allVideos.forEach(activeVideo => {
     saveButton.setAttribute("aria-pressed", String(isSaved));
     saveButton.classList.toggle("is-active", isSaved);
   };
-  const syncLikeAccess = (signedIn) => {
-    isSignedIn = signedIn === true;
+  const syncLikeAccess = async (signedIn) => {
+    const requestVersion = ++likeLoadVersion;
+    const user = window.siteCurrentUser;
+    isSignedIn = signedIn === true && Boolean(user);
     likeButton.disabled = !isSignedIn;
     likeButton.title = isSignedIn ? "Suka video" : "Login untuk menyukai video";
-    const likedStorageKey = userClipStorageKey("site-liked-videos");
-    likedClipKeys = isSignedIn && likedStorageKey ? readClipSet(likedStorageKey) : [];
-    updateVideoActions();
+    if (!isSignedIn) {
+      likedClipKeys = [];
+      videoActionStatus.textContent = "";
+      updateVideoActions();
+      return;
+    }
+
+    likeButton.disabled = true;
+    videoActionStatus.textContent = "Memuat daftar suka...";
+    try {
+      const legacyStorageKey = userClipStorageKey("site-liked-videos");
+      const legacyKeys = legacyStorageKey ? readClipSet(legacyStorageKey) : [];
+      const legacyRecords = legacyKeys.map((legacyKey) => {
+        const clip = clips.find(({ key }) => key === legacyKey || key.replace(/^frontend\//, "") === legacyKey);
+        const videoSrc = clip?.video.dataset.videoSrc || clip?.sources[0]?.dataset.src || "";
+        if (!clip || !videoSrc) return null;
+        return {
+          legacyKey,
+          video_key: clip.key,
+          video_src: videoSrc,
+          poster_src: clip.video.dataset.posterSrc || "",
+          collection_name: clip.collectionName,
+          credit: clip.item.querySelector(".shorts-credit")?.textContent.trim() || ""
+        };
+      }).filter(Boolean);
+
+      if (legacyRecords.length > 0) {
+        await window.likedVideosApi.upsertMany(legacyRecords, user);
+        const migratedKeys = new Set(legacyRecords.map(({ legacyKey }) => legacyKey));
+        const remainingKeys = legacyKeys.filter((key) => !migratedKeys.has(key));
+        try {
+          if (remainingKeys.length > 0) localStorage.setItem(legacyStorageKey, JSON.stringify(remainingKeys));
+          else localStorage.removeItem(legacyStorageKey);
+        } catch (error) {
+          console.warn("Data suka lama berhasil disalin, tetapi penyimpanan lokal tidak dapat dibersihkan:", error);
+        }
+        if (remainingKeys.length > 0) {
+          console.warn("Sebagian video suka lama tidak ditemukan dan belum dapat dipindahkan:", remainingKeys);
+        }
+      }
+
+      const likedVideos = await window.likedVideosApi.list(user);
+      if (requestVersion !== likeLoadVersion || window.siteCurrentUser?.uid !== user.uid) return;
+      likedClipKeys = likedVideos.map(({ video_key }) => video_key);
+      videoActionStatus.textContent = "";
+      updateVideoActions();
+    } catch (error) {
+      console.error("Gagal memuat video yang disukai dari Supabase:", error);
+      if (requestVersion === likeLoadVersion && window.siteCurrentUser?.uid === user.uid) {
+        likedClipKeys = [];
+        videoActionStatus.textContent = error instanceof Error ? error.message : "Gagal memuat suka dari Supabase.";
+        updateVideoActions();
+      }
+    } finally {
+      if (requestVersion === likeLoadVersion && window.siteCurrentUser?.uid === user.uid) {
+        likeButton.disabled = false;
+      }
+    }
   };
   window.addEventListener("site-auth-state-change", (event) => {
     syncLikeAccess(event.detail?.signedIn);
@@ -732,17 +839,36 @@ allVideos.forEach(activeVideo => {
   const persistClipSet = (storageKey, values) => {
     try { localStorage.setItem(storageKey, JSON.stringify(values)); } catch {}
   };
-  likeButton.addEventListener("click", () => {
+  likeButton.addEventListener("click", async () => {
     if (!isSignedIn) return;
-    const key = clips[activeClipIndex]?.key;
-    if (!key) return;
-    likedClipKeys = likedClipKeys.includes(key)
-      ? likedClipKeys.filter((savedKey) => savedKey !== key)
-      : [...likedClipKeys, key];
-    const likedStorageKey = userClipStorageKey("site-liked-videos");
-    if (!likedStorageKey) return;
-    persistClipSet(likedStorageKey, likedClipKeys);
-    updateVideoActions();
+    const clip = clips[activeClipIndex];
+    const user = window.siteCurrentUser;
+    if (!clip || !user) return;
+    const isLiked = likedClipKeys.includes(clip.key);
+    likeButton.disabled = true;
+    videoActionStatus.textContent = "Menyimpan perubahan...";
+    try {
+      if (isLiked) {
+        await window.likedVideosApi.remove(clip.key, user);
+        likedClipKeys = likedClipKeys.filter((key) => key !== clip.key);
+      } else {
+        await window.likedVideosApi.upsertMany([{
+          video_key: clip.key,
+          video_src: clip.video.dataset.videoSrc || clip.sources[0]?.dataset.src || "",
+          poster_src: clip.video.dataset.posterSrc || "",
+          collection_name: clip.collectionName,
+          credit: clip.item.querySelector(".shorts-credit")?.textContent.trim() || ""
+        }], user);
+        likedClipKeys = [...likedClipKeys, clip.key];
+      }
+      videoActionStatus.textContent = "";
+      updateVideoActions();
+    } catch (error) {
+      console.error("Gagal menyimpan perubahan suka di Supabase:", error);
+      videoActionStatus.textContent = error instanceof Error ? error.message : "Gagal menyimpan perubahan ke Supabase.";
+    } finally {
+      likeButton.disabled = !isSignedIn;
+    }
   });
   saveButton.addEventListener("click", () => {
     const key = clips[activeClipIndex]?.key;
