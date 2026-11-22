@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musik</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem("site-theme") || "slate";
+    } catch {
+      document.documentElement.dataset.theme = "slate";
+    }
+  </script>
+  <link rel="icon" type="image/jpg" href="favicon.ico">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-rainbow" aria-hidden="true"></div>
+  <main class="social-page">
+    <a class="social-back" href="../index.html">&larr; Kembali ke video</a>
+    <header class="social-header">
+      <p class="shorts-eyebrow">DENGARKAN</p>
+      <h1 class="rainbow">Musik</h1>
+      <p>Pilih lagu, atur volume, dan nikmati musik favorit.</p>
+    </header>
+
+    <section class="music-player" aria-label="Pemutar musik">
+      <h2 id="judulLagu">Lagu pertama</h2>
+      <p id="statusMusik" role="status" aria-live="polite">Menunggu audio...</p>
+
+      <audio id="bgm" preload="none">
+        Browser kamu tidak mendukung audio.
+      </audio>
+
+      <div class="kontrol-musik">
+        <button type="button" onclick="laguSebelumnya()">⏮ Sebelumnya</button>
+        <button type="button" onclick="laguBerikutnya()">Berikutnya ⏭</button>
+      </div>
+
+      <button id="tombolMusik" type="button" onclick="toggleMusic()">
+        ▶ Play Music
+      </button>
+
+      <label for="volumeMusik">Volume</label>
+      <input
+        id="volumeMusik"
+        class="vol"
+        type="range"
+        min="0"
+        max="100"
+        value="45"
+        oninput="setVolume(this.value)"
+      >
+    </section>
+  </main>
+  <script src="music.js"></script>
+</body>
+</html>
