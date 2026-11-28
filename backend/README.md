@@ -30,7 +30,9 @@ Dari terminal di root proyek, jalankan:
 ```powershell
 npm --prefix backend start
 atau
-npm start, node server.js
+1. cd backend
+2. npm start
+3. node server.js
 ```
 
 Backend lokal berjalan di `http://localhost:3001`. Cek `http://localhost:3001/health`; status `ok` berarti backend dapat mengakses tabel Supabase. Biarkan proses backend berjalan saat mencoba website lokal.
