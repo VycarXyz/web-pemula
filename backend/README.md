@@ -18,7 +18,7 @@ SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_SECRET_KEY=sb_secret_...
 FIREBASE_PROJECT_ID=myweb-id
 PORT=3001
-FRONTEND_ORIGINS=http://localhost:5501,http://127.0.0.1:5501
+FRONTEND_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
 ```
 
 Jika Supabase hanya menampilkan key lama, gunakan `service_role` sebagai `SUPABASE_SECRET_KEY`. Jangan menaruh key ini di file frontend, jangan kirim lewat chat, dan jangan commit `.env`.
@@ -29,6 +29,8 @@ Dari terminal di root proyek, jalankan:
 
 ```powershell
 npm --prefix backend start
+atau
+npm start, node server.js
 ```
 
 Backend lokal berjalan di `http://localhost:3001`. Cek `http://localhost:3001/health`; status `ok` berarti backend dapat mengakses tabel Supabase. Biarkan proses backend berjalan saat mencoba website lokal.
@@ -50,4 +52,4 @@ Secret key tidak boleh dimasukkan ke `frontend/`, tidak boleh di-commit, dan tid
 
 ## 5. Jalankan website lokal
 
-Jalankan `npm --prefix backend start`, lalu buka `index.html` melalui Live Server di port `5501`. Data dapat dilihat di **Supabase > Table Editor > video_likes**.
+Jalankan `npm --prefix backend start`, lalu buka `index.html` melalui Live Server (biasanya di port `5500`). Frontend berjalan di port Live Server, sedangkan backend Node.js tetap di `http://localhost:3001`; keduanya memang memakai port berbeda. Data dapat dilihat di **Supabase > Table Editor > video_likes**.
